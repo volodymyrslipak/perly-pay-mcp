@@ -1,0 +1,53 @@
+{
+  "name": "perly-pay-mcp",
+  "version": "0.1.0",
+  "description": "Perly Pay for AI coding assistants: a local MCP server (stdio) to sell for crypto from your editor — products, prices, payment links, invoices and test payments, straight to your own wallet.",
+  "license": "MIT",
+  "author": "Perly (https://pay.perly.io)",
+  "homepage": "https://pay.perly.io/docs/mcp",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/volodymyrslipak/perly-pay-mcp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/volodymyrslipak/perly-pay-mcp/issues"
+  },
+  "keywords": [
+    "perly",
+    "perly-pay",
+    "mcp",
+    "model-context-protocol",
+    "claude",
+    "cursor",
+    "codex",
+    "payments",
+    "crypto",
+    "bitcoin",
+    "usdc",
+    "usdt",
+    "non-custodial"
+  ],
+  "type": "module",
+  "bin": {
+    "perly-pay-mcp": "dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "clean": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\"",
+    "build": "npm run clean && tsc -p tsconfig.json",
+    "prepack": "npm run build"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/server": "2.3.1"
+  }
+}

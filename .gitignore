@@ -1,0 +1,6 @@
+# Built by `npm run build` / `npm pack`; never committed
+/dist/
+*.tgz
+# Never install here: the app's own `npm test` would pick up the tests that ship
+# inside dependencies (zod's). e2e/run.mjs installs the packed package in a temp folder.
+/node_modules/
