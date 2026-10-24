@@ -90,6 +90,10 @@ are the API's own.
   a webhook endpoint) waits for `confirm: true`, which the assistant should
   only send after asking you.
 - **Your secret key is never repeated** in an answer or a log.
+- **Text others wrote is marked as data.** Customer names, emails, descriptions
+  and metadata can come from buyers, or from anyone who opens a payment link;
+  every API answer ends with a note telling the assistant not to follow them.
+  Still read what a tool is about to change before you approve it.
 
 Docs: <https://pay.perly.io/docs/mcp>. API reference:
 <https://pay.perly.io/docs/api>. MIT licence.

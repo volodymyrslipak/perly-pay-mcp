@@ -31,7 +31,8 @@ async function ok(client, name, args) {
   const text = textOf(result);
   assert.ok(!result.isError, `${name} failed: ${text}`);
   assert.ok(!text.includes(secretKey), `${name} repeated the secret key`);
-  return JSON.parse(text);
+  // The JSON first; an API answer then says its free text is data written by others (SUPPLY3-05).
+  return JSON.parse(result.content[0].text);
 }
 
 async function refused(client, name, args, words) {
