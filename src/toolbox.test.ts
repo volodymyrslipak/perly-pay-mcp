@@ -292,7 +292,7 @@ describe("pay_links", () => {
   it("gives the dashboard pages a person must use, with the mode, without a key", async () => {
     const all = JSON.parse(textOf(await box(undefined, fakeFetch().fetch).call("pay_links", {})));
     expect(all.mode).toBeNull();
-    expect(all.links.map((l: { topic: string }) => l.topic)).toEqual(expect.arrayContaining(["choose_plan", "connect_wallet", "go_live", "two_factor"]));
+    expect(all.links.map((l: { topic: string }) => l.topic)).toEqual(expect.arrayContaining(["billing", "connect_wallet", "go_live", "two_factor"]));
     const one = JSON.parse(textOf(await box(LIVE_KEY, fakeFetch().fetch).call("pay_links", { topic: "two_factor" })));
     expect(one).toEqual({ mode: "live", links: [{ topic: "two_factor", url: "http://localhost:3272/dashboard/settings/security", what: expect.any(String) }] });
   });

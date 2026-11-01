@@ -1,14 +1,14 @@
 /**
  * What only a person can do, and where: the dashboard pages behind the
- * steps no API key may take — choosing a plan, connecting a wallet, going
+ * steps no API key may take — paying a bill, connecting a wallet, going
  * live, two-factor sign-in, keys and live webhooks, live refunds.
  */
 
-export const LINK_TOPICS = ["choose_plan", "connect_wallet", "go_live", "two_factor", "api_keys", "webhooks", "refunds", "checklist"] as const;
+export const LINK_TOPICS = ["billing", "connect_wallet", "go_live", "two_factor", "api_keys", "webhooks", "refunds", "checklist"] as const;
 export type LinkTopic = (typeof LINK_TOPICS)[number];
 
 const LINKS: Readonly<Record<LinkTopic, { path: string; what: string }>> = {
-  choose_plan: { path: "/dashboard/billing", what: "Choose or change the Perly Pay plan. Flat price, 0% of volume." },
+  billing: { path: "/dashboard/billing", what: "See and pay your Perly Pay bill: 2.5¢ a payment, never more than 0.5% of it, billed on the 1st." },
   connect_wallet: {
     path: "/dashboard/wallets",
     what: "Connect a wallet by its PUBLIC key or address. Payments land there directly; Perly Pay never asks for a seed or private key.",

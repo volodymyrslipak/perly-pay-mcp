@@ -1,0 +1,40 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.perly/pay-mcp",
+  "title": "Perly Pay",
+  "description": "Sell for crypto from your editor: products, payment links, invoices and test payments.",
+  "websiteUrl": "https://pay.perly.io/docs/mcp",
+  "repository": {
+    "url": "https://github.com/volodymyrslipak/perly-pay-mcp",
+    "source": "github"
+  },
+  "version": "0.1.2",
+  "packages": [
+    {
+      "registryType": "npm",
+      "registryBaseUrl": "https://registry.npmjs.org",
+      "identifier": "perly-pay-mcp",
+      "version": "0.1.2",
+      "transport": { "type": "stdio" },
+      "environmentVariables": [
+        {
+          "name": "PERLY_PAY_SECRET_KEY",
+          "description": "Your key from Dashboard → Developers: sk_test_… while you build.",
+          "isRequired": true,
+          "isSecret": true
+        },
+        {
+          "name": "PERLY_PAY_API",
+          "description": "Optional. Default https://pay.perly.io.",
+          "isRequired": false
+        },
+        {
+          "name": "PERLY_PAY_WEBHOOK_SECRET",
+          "description": "Optional whsec_…, the default for verify_webhook_signature.",
+          "isRequired": false,
+          "isSecret": true
+        }
+      ]
+    }
+  ]
+}

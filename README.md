@@ -5,7 +5,8 @@ local [MCP](https://modelcontextprotocol.io) server for
 [Perly Pay](https://pay.perly.io): your assistant can create products, prices,
 payment links and invoices, pay them in test mode, read payments and receipts,
 and check a buyer's access. Bitcoin, USDC and USDT land straight in your own
-wallet; Perly Pay never holds them.
+wallet; Perly Pay never holds them. It costs 2.5¢ a payment, never more than
+0.5% of it, and a month of up to 21 payments is free.
 
 It runs on your machine over stdio and talks only to Perly Pay's public API
 with your key. There is no server of ours in between.
@@ -84,7 +85,7 @@ are the API's own.
   spends a buyer's credits or deletes: simulated payments, refunds, credit
   spending, new or deleted webhook endpoints. It says why and where you do it.
   Reading, and making products, prices, links and invoices, work as in test.
-- **Wallets, API keys, plans, live mode and two-factor** have no tool at all.
+- **Wallets, API keys, billing, live mode and two-factor** have no tool at all.
   You set them in the dashboard; `pay_links` gives the pages.
 - **What cannot be undone** (cancelling an invoice, opening a refund, deleting
   a webhook endpoint) waits for `confirm: true`, which the assistant should
@@ -97,7 +98,3 @@ are the API's own.
 
 Docs: <https://pay.perly.io/docs/mcp>. API reference:
 <https://pay.perly.io/docs/api>. MIT licence.
-
-## Source
-
-This is the source of the `perly-pay-mcp` package on npm, copied from Perly Pay's own repository on each release (paths in comments such as `packages/…` refer to that layout). Issues and pull requests are welcome here.

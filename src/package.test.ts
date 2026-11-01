@@ -26,6 +26,19 @@ describe("the npm package", () => {
     expect(MCP_VERSION).toBe(pkg.version);
   });
 
+  it("is what server.json tells the MCP Registry", () => {
+    const server = JSON.parse(readFileSync(new URL("server.json", root), "utf8")) as {
+      name: string;
+      description: string;
+      version: string;
+      packages: { identifier: string; version: string }[];
+    };
+    expect(server.name).toBe(pkg.mcpName);
+    expect(server.version).toBe(pkg.version);
+    expect(server.packages).toEqual([expect.objectContaining({ identifier: pkg.name, version: pkg.version })]);
+    expect(server.description.length).toBeLessThanOrEqual(100);
+  });
+
   it("ships only the build, the README and the licence", () => {
     expect(pkg.files).toEqual(["dist", "README.md", "LICENSE"]);
     expect((pkg.scripts as Record<string, string>).prepack).toBe("npm run build");

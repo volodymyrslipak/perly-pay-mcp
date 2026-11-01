@@ -138,7 +138,7 @@ const LINKS_TOOL: Tool = {
   name: "pay_links",
   title: "Dashboard pages for what a person must do",
   description: [
-    "The Perly Pay dashboard pages for steps no API key can take: choose a plan, connect a wallet (public key only), go live, set up two-factor sign-in, manage API keys and live webhooks, send live refunds, and the go-live checklist.",
+    "The Perly Pay dashboard pages for steps no API key can take: pay a Perly Pay bill, connect a wallet (public key only), go live, set up two-factor sign-in, manage API keys and live webhooks, send live refunds, and the go-live checklist.",
     "Give the person the link and say what to do there; do not try these through other tools.",
   ].join("\n\n"),
   inputSchema: {
@@ -152,7 +152,7 @@ const LINKS_TOOL: Tool = {
 function instructions(config: Config): string {
   const mode = config.mode === "live" ? "LIVE mode (real money)" : config.mode === "test" ? "test mode" : "no mode yet (no usable key)";
   return [
-    `Perly Pay (${config.siteUrl}): non-custodial crypto checkout — bitcoin, USDC and USDT land straight in the merchant's own wallet, 0% of volume. This server acts with the merchant's secret key, in ${mode}.`,
+    `Perly Pay (${config.siteUrl}): non-custodial crypto checkout — bitcoin, USDC and USDT land straight in the merchant's own wallet, 2.5¢ a payment. This server acts with the merchant's secret key, in ${mode}.`,
     "To sell something: create_product → create_price (amounts are integers in minor units: 5000 = $50.00) → create_payment_link, and share its `url`; or create_invoice for one buyer. For access: check_entitlement; credit packs: consume_entitlement_credits.",
     "In test mode, simulate_payment pays an invoice or a payment link, so fulfilment, receipts and webhooks can be tested without coins; list_payments and list_events show what happened. Point webhooks at the app with create_webhook_endpoint and check its handler with verify_webhook_signature.",
     "A person does the rest in the dashboard — plan, wallet, going live, two-factor, keys: pay_links gives the pages. With a live key, nothing that moves or redirects money, spends a buyer's credits or deletes is done; the tool says why.",
@@ -172,10 +172,12 @@ function hint(error: ApiError, config: Config): string | null {
     case "no_wallet":
       return `No wallet is connected for this mode: a person connects one at ${page("connect_wallet")}.`;
     case "plan_limit_reached":
-      return `This month's paid sales are past the plan's limit and its buffer, so new live payments stop until a person moves up a plan at ${page("choose_plan")}. Invoices already made still get paid.`;
+      return `This account's old plan has reached its limit for the month. Plans can no longer be changed: the limit ends with the period already paid for, when pay as you go takes over. Invoices already made still get paid. Billing: ${page("billing")}.`;
+    case "bill_overdue":
+      return `A Perly Pay bill is unpaid past its 14 days, so new live payments are paused until a person pays it in Billing at ${page("billing")}. Invoices already made still get paid.`;
     case "plan_limit":
     case "merchant_suspended":
-      return `The plan does not allow it: a person chooses one at ${page("choose_plan")}.`;
+      return `This account cannot take that now: a person checks Billing at ${page("billing")}.`;
     case "resource_missing":
       return "Check the id. Test and live are separate: a test key cannot see live objects, nor the reverse.";
     case "test_mode_only":
