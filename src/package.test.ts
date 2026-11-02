@@ -58,4 +58,11 @@ describe("the npm package", () => {
     const named = [...table.matchAll(/`([a-z]+(?:_[a-z]+)+)`/g)].map((m) => m[1]);
     expect(new Set(named)).toEqual(new Set(tools));
   });
+
+  it("its Dockerfile, which Glama and Docker's catalogue build, compiles with the repo's TypeScript and runs the bin", () => {
+    const dockerfile = readFileSync(new URL("Dockerfile", root), "utf8");
+    const repoTs = JSON.parse(readFileSync(new URL("../../node_modules/typescript/package.json", root), "utf8")) as { version: string };
+    expect(dockerfile).toContain(`typescript@${repoTs.version} `);
+    expect(dockerfile).toContain(`ENTRYPOINT ["node", "${(pkg.bin as Record<string, string>)["perly-pay-mcp"]}"]`);
+  });
 });
