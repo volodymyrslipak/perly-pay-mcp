@@ -6,7 +6,7 @@
  */
 import type { Config } from "./config.js";
 
-export const MCP_VERSION = "0.2.0";
+export const MCP_VERSION = "0.3.0";
 
 export interface ApiError {
   type: string;

@@ -49,6 +49,11 @@ describe("the MCP tools and the API", () => {
     }
   });
 
+  it("with a live key every exposed write is refused: the table says so, not only the toolbox (mcp/no-person-bound-approval)", () => {
+    const writable = OPERATIONS.filter((op) => op.method !== "GET" && CURATION[op.operationId]?.expose);
+    for (const op of writable) expect(CURATION[op.operationId], op.operationId).toMatchObject({ live: "refuse", liveWhy: expect.any(String) });
+  });
+
   it("tool names are unique and fit every client's limit", () => {
     const names = OPERATIONS.map((o) => o.tool);
     expect(new Set(names).size).toBe(names.length);

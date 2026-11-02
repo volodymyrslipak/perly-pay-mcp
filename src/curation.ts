@@ -5,13 +5,25 @@
  * gains one this table does not decide on, so a new endpoint is a choice,
  * never an accident.
  *
- * The line it draws: an assistant may build and test a shop end to end, and
- * read a live one. With a live key it may not move or redirect money, change
- * what is on sale or where its buyers land, send live events somewhere new,
- * spend a buyer's credits or delete anything — text from a buyer can reach the
- * assistant, so those are for the merchant, in the dashboard (`pay_links`), or
- * for their app's own code. Wallets, API keys, plans and live mode have no endpoint at
- * all; an assistant can only point at the page.
+ * The line it draws: an assistant may build and test a shop end to end with a
+ * test key. With a live key the server only reads: every tool that writes
+ * (creating invoices, sessions, products, prices, customers, links and
+ * subscriptions as well as every edit, cancel, refund and delete) is refused
+ * with why, and the person does it in the dashboard (`pay_links`) or their
+ * app's own code (mcp/no-person-bound-approval, after AUTHZ-06).
+ *
+ * Why refuse rather than ask: text from a buyer can reach the assistant
+ * (names, descriptions, metadata), and nothing the server receives proves a
+ * person approved a call. `confirm: true` is an argument the same model
+ * writes; a client's approval prompt is the client's, unseen here; and an
+ * MCP elicitation answer comes back through that same client, which the
+ * server cannot tell from the model. The API key has no scopes either, so
+ * the server is the only place the line can be held. With no clean way to
+ * get a person's approval the model cannot fake, a live key reads and never
+ * writes. `toolbox.ts` holds the floor too: with a live key any call that is
+ * not a GET is refused, whatever this table says. Wallets, API keys, plans
+ * and live mode have no endpoint at all; an assistant can only point at the
+ * page.
  */
 
 export interface Exposed {
@@ -33,7 +45,14 @@ export type Decision = Exposed | Excluded;
 
 const allow: Exposed = { expose: true, live: "allow" };
 
-/** A live key adds to the catalog; it does not change what buyers already see (AUTHZ-06). */
+/** Why a live key writes nothing through an assistant (mcp/no-person-bound-approval). */
+export const LIVE_READ_ONLY =
+  "With a live key this server only reads: nothing here can prove a person approved a live change. Do it in the dashboard, or in your app's own code with the SDK; try it here with a test key (sk_test_…).";
+
+/** A write: free with a test key, refused with a live one. */
+const testOnlyWrite: Exposed = { expose: true, live: "refuse", liveWhy: LIVE_READ_ONLY };
+
+/** A live key does not change what buyers already see (AUTHZ-06). */
 const testOnlyEdit: Exposed = { expose: true, live: "refuse", liveWhy: "Changing what is on sale, or where its buyers land, is for the dashboard when real buyers are looking. Try it with a test key." };
 
 /**
@@ -44,38 +63,38 @@ const testOnlyEdit: Exposed = { expose: true, live: "refuse", liveWhy: "Changing
 const covered = (by: string): Excluded => ({ expose: false, why: `Covered by ${by}; left out to keep the set under clients' tool limits.` });
 
 export const CURATION: Readonly<Record<string, Decision>> = {
-  createInvoice: allow,
+  createInvoice: testOnlyWrite,
   listInvoices: allow,
   retrieveInvoice: allow,
-  cancelInvoice: { ...allow, confirm: "Cancels the invoice: its buyer can no longer pay it." },
+  cancelInvoice: { ...testOnlyWrite, confirm: "Cancels the invoice: its buyer can no longer pay it." },
   simulatePayment: {
     expose: true,
     live: "refuse",
     liveWhy: "Simulated payments exist only in test mode. Use a test key (sk_test_…) to try the flow.",
   },
 
-  createCheckoutSession: allow,
+  createCheckoutSession: testOnlyWrite,
   listCheckoutSessions: covered("retrieve_checkout_session and list_invoices"),
   retrieveCheckoutSession: allow,
   expireCheckoutSession: covered("the session's own expiry (expires_in_minutes)"),
   openCheckoutSession: { expose: false, why: "The buyer's page (pay.js opens it), not a merchant call." },
 
-  createProduct: allow,
+  createProduct: testOnlyWrite,
   listProducts: allow,
   retrieveProduct: covered("list_products"),
   updateProduct: testOnlyEdit,
 
-  createPrice: allow,
+  createPrice: testOnlyWrite,
   listPrices: allow,
   retrievePrice: covered("list_prices"),
   updatePrice: testOnlyEdit,
 
-  createCustomer: allow,
+  createCustomer: testOnlyWrite,
   listCustomers: allow,
   retrieveCustomer: allow,
   updateCustomer: covered("create_customer (customers are found or made by email)"),
 
-  createSubscription: allow,
+  createSubscription: testOnlyWrite,
   listSubscriptions: allow,
   retrieveSubscription: allow,
   updateSubscription: { expose: false, why: "Changing a subscriber's plan or quantity is the merchant's call, in the dashboard or their code." },
@@ -84,7 +103,7 @@ export const CURATION: Readonly<Record<string, Decision>> = {
   resumeSubscription: { expose: false, why: "Restarts a buyer's billing; the merchant's call, in the dashboard or their code." },
   prepaySubscription: { expose: false, why: "Bills a buyer ahead; the merchant's call, in the dashboard or their code." },
 
-  createPaymentLink: allow,
+  createPaymentLink: testOnlyWrite,
   listPaymentLinks: allow,
   retrievePaymentLink: covered("list_payment_links"),
   updatePaymentLink: testOnlyEdit,
@@ -152,6 +171,7 @@ export const CURATION: Readonly<Record<string, Decision>> = {
     confirm: "Deletes the webhook endpoint: its events stop.",
   },
   rollWebhookSecret: { expose: false, why: "A new signing secret breaks webhook checks until it is deployed; rolled in the dashboard." },
+  claimWebhookDelivery: { expose: false, why: "Used up by the app that received the delivery (Zapier, Make); an assistant claiming one would stop that app's run." },
 };
 
 /** `createPaymentLink` → `create_payment_link`. */

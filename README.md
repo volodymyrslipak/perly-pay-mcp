@@ -49,7 +49,7 @@ or newer.
 
 | Variable | |
 | --- | --- |
-| `PERLY_PAY_SECRET_KEY` | `sk_test_…` while you build. `sk_live_…` works too, with the limits below. |
+| `PERLY_PAY_SECRET_KEY` | `sk_test_…` while you build. `sk_live_…` reads only (see below). |
 | `PERLY_PAY_API` | Default `https://pay.perly.io`. A `perly.io` host or this machine; plain `http` only for `localhost`. |
 | `PERLY_PAY_ALLOW_ANY_API` | `1` sends your key to any other `https` host in `PERLY_PAY_API`, for a copy you run yourself. |
 | `PERLY_PAY_WEBHOOK_SECRET` | Optional `whsec_…`, the default for `verify_webhook_signature`. |
@@ -82,11 +82,16 @@ are the API's own.
 
 ## What it will not do
 
-- **With a live key**, it refuses anything that moves or redirects money,
-  spends a buyer's credits, changes what is on sale or deletes: simulated
-  payments, refunds, credit spending, edits to products, prices and links, new
-  or deleted webhook endpoints. It says why and where you do it.
-  Reading, and making products, prices, links and invoices, work as in test.
+- **With a live key, it only reads.** Every tool that writes is refused:
+  creating invoices, checkout sessions, products, prices, customers, payment
+  links and subscriptions, cancelling, editing, refunds, credit spending,
+  simulated payments and webhook endpoints. It says why, and you do it in the
+  dashboard or in your app's own code. Lists and lookups work as in test.
+  Why: text a buyer typed can reach the assistant, and nothing the server
+  receives proves that you, not the model, approved a live change
+  (`confirm: true` is written by the model; a client's approval prompt and an
+  MCP elicitation answer both come back through the client). So the server
+  never writes with a live key.
 - **Wallets, API keys, billing, live mode and two-factor** have no tool at all.
   You set them in the dashboard; `pay_links` gives the pages.
 - **What cannot be undone** (cancelling an invoice, opening a refund, deleting

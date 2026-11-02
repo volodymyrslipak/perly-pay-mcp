@@ -1,7 +1,7 @@
 {
   "name": "perly-pay-mcp",
   "mcpName": "io.perly/pay-mcp",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Perly Pay for AI coding assistants: a local MCP server (stdio) to sell for crypto from your editor — products, prices, payment links, invoices and test payments, straight to your own wallet.",
   "license": "MIT",
   "author": "Perly (https://pay.perly.io)",

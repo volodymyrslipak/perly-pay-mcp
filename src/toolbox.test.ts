@@ -186,6 +186,43 @@ describe("keys and errors", () => {
     expect(textOf(result)).toContain("webhook signing secret");
   });
 
+  it("with a live key only reads: every tool that writes is refused, says where a person does it, and sends nothing (mcp/no-person-bound-approval)", async () => {
+    const writes = OPERATIONS.filter((op) => op.method !== "GET");
+    expect(writes.map((op) => op.tool)).toEqual(
+      expect.arrayContaining(["create_invoice", "create_checkout_session", "create_product", "create_price", "create_customer", "create_payment_link", "cancel_invoice", "create_subscription"]),
+    );
+    for (const op of OPERATIONS) {
+      const schema = box(TEST_KEY, fakeFetch().fetch).tools.find((t) => t.name === op.tool)!.inputSchema;
+      const args = { ...argsFor(schema, op.queryParams), ...(op.tool === "simulate_payment" ? { id: "inv_1" } : {}) };
+      const { fetch, sent } = fakeFetch();
+      const result = await box(LIVE_KEY, fetch).call(op.tool, args);
+      if (op.method === "GET") {
+        expect(result.isError, op.tool).toBeUndefined();
+        expect(sent, op.tool).toHaveLength(1);
+      } else {
+        expect(result.isError, op.tool).toBe(true);
+        expect(textOf(result), op.tool).toContain("Refused with a live key");
+        expect(textOf(result), op.tool).toMatch(/dashboard|your app's own code/);
+        expect(sent, op.tool).toHaveLength(0);
+      }
+    }
+  });
+
+  it("with a test key every write still goes through", async () => {
+    for (const tool of ["create_invoice", "create_product", "create_subscription"]) {
+      const op = OPERATIONS.find((o) => o.tool === tool)!;
+      const schema = box(TEST_KEY, fakeFetch().fetch).tools.find((t) => t.name === tool)!.inputSchema;
+      const { fetch, sent } = fakeFetch();
+      const result = await box(TEST_KEY, fetch).call(tool, argsFor(schema, op.queryParams));
+      expect(result.isError, tool).toBeUndefined();
+      expect(sent, tool).toHaveLength(1);
+    }
+  });
+
+  it("a live key's instructions say the server only reads", () => {
+    expect(box(LIVE_KEY, fakeFetch().fetch).instructions).toMatch(/only reads/);
+  });
+
   it("never lets a live key change what is on sale or where buyers land (AUTHZ-06)", async () => {
     for (const tool of ["update_product", "update_price", "update_payment_link"]) {
       const { fetch, sent } = fakeFetch();

@@ -85,8 +85,9 @@ for (const era of ["2025 (initialize)", "auto"]) {
   assert.equal(linksOut.links[0].url, `${apiUrl}/dashboard/wallets`);
   await client.close();
 
-  // A live key: what moves money or deletes is refused with why, and the key never comes back.
+  // A live key only reads: every write is refused with why, and the key never comes back.
   const live = await connect(LIVE_KEY, era);
+  await refused(live, "create_product", { name: "Live from an assistant" }, /only reads/);
   await refused(live, "simulate_payment", { id: invoice.id }, /Refused with a live key/);
   await refused(live, "create_refund", { invoice: invoice.id, confirm: true }, /real money/);
   await refused(live, "delete_webhook_endpoint", { id: "we_1", confirm: true }, /Deleting with a live key/);
