@@ -50,7 +50,8 @@ or newer.
 | Variable | |
 | --- | --- |
 | `PERLY_PAY_SECRET_KEY` | `sk_test_…` while you build. `sk_live_…` works too, with the limits below. |
-| `PERLY_PAY_API` | Default `https://pay.perly.io`. Plain `http` only for `localhost`. |
+| `PERLY_PAY_API` | Default `https://pay.perly.io`. A `perly.io` host or this machine; plain `http` only for `localhost`. |
+| `PERLY_PAY_ALLOW_ANY_API` | `1` sends your key to any other `https` host in `PERLY_PAY_API`, for a copy you run yourself. |
 | `PERLY_PAY_WEBHOOK_SECRET` | Optional `whsec_…`, the default for `verify_webhook_signature`. |
 
 ## Try it
@@ -82,8 +83,9 @@ are the API's own.
 ## What it will not do
 
 - **With a live key**, it refuses anything that moves or redirects money,
-  spends a buyer's credits or deletes: simulated payments, refunds, credit
-  spending, new or deleted webhook endpoints. It says why and where you do it.
+  spends a buyer's credits, changes what is on sale or deletes: simulated
+  payments, refunds, credit spending, edits to products, prices and links, new
+  or deleted webhook endpoints. It says why and where you do it.
   Reading, and making products, prices, links and invoices, work as in test.
 - **Wallets, API keys, billing, live mode and two-factor** have no tool at all.
   You set them in the dashboard; `pay_links` gives the pages.
@@ -91,6 +93,7 @@ are the API's own.
   a webhook endpoint) waits for `confirm: true`, which the assistant should
   only send after asking you.
 - **Your secret key is never repeated** in an answer or a log.
+- **Buyers' license keys never reach the assistant**: an event that carries one comes back without its `key`; they stay in the dashboard.
 - **Text others wrote is marked as data.** Customer names, emails, descriptions
   and metadata can come from buyers, or from anyone who opens a payment link;
   every API answer ends with a note telling the assistant not to follow them.

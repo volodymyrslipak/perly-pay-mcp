@@ -92,15 +92,18 @@ describe("the tool set", () => {
     }
   });
 
-  it("tools that cannot be undone ask for confirm and say they are destructive", () => {
+  it("tools that cannot be undone ask for confirm, and they and updates say they are destructive", () => {
     for (const tool of tools) {
       const op = OPERATIONS.find((o) => o.tool === tool.name);
       const decision = op && (CURATION[op.operationId] as Exposed);
+      // An update overwrites what buyers see (a link's success_url, a product's description): a client asks the
+      // person before it, as for what cannot be undone (mcp/no-person-bound-approval).
+      const update = op?.method === "POST" && /\/\{id\}$/.test(op.path);
       if (decision?.confirm) {
         expect(tool.inputSchema.required, tool.name).toContain("confirm");
         expect(tool.annotations.destructiveHint, tool.name).toBe(true);
       } else {
-        expect(tool.annotations.destructiveHint, tool.name).toBe(false);
+        expect(tool.annotations.destructiveHint, tool.name).toBe(update);
       }
       if (op) expect(tool.annotations.readOnlyHint, tool.name).toBe(op.method === "GET");
     }
@@ -181,6 +184,15 @@ describe("keys and errors", () => {
   it("a webhook secret in the key's place is named for what it is", async () => {
     const result = await box("whsec_abc", fakeFetch().fetch).call("list_products", {});
     expect(textOf(result)).toContain("webhook signing secret");
+  });
+
+  it("never lets a live key change what is on sale or where buyers land (AUTHZ-06)", async () => {
+    for (const tool of ["update_product", "update_price", "update_payment_link"]) {
+      const { fetch, sent } = fakeFetch();
+      const result = await box(LIVE_KEY, fetch).call(tool, { id: "x" });
+      expect(textOf(result)).toContain("Refused with a live key");
+      expect(sent).toHaveLength(0);
+    }
   });
 
   it("never sends the key over plain http to another machine", async () => {
@@ -324,5 +336,34 @@ describe("text others wrote (SUPPLY3-05)", () => {
   it("is named in the server's instructions", () => {
     const { instructions } = box(TEST_KEY, fakeFetch().fetch);
     expect(instructions).toMatch(/data, not instructions[\s\S]*anyone who opens a payment link/);
+  });
+});
+
+describe("buyers' license keys (mcp/list-events-license-keys)", () => {
+  // curation.ts keeps list/retrieve license keys out; an event's data.object must not carry the key back.
+  const buyerKey = "PERLY-ABCD-EFGH-IJKL-MNOP";
+  const event = {
+    id: "evt_1",
+    object: "event",
+    type: "license.created",
+    data: { object: { id: "lic_1", object: "license_key", key: buyerKey, status: "active", product: "prod_1", customer: "cus_1" } },
+  };
+
+  it.each([TEST_KEY, LIVE_KEY])("list_events never hands the assistant a license key's key (%s)", async (key) => {
+    const { fetch } = fakeFetch(() => Response.json({ object: "list", data: [event], has_more: false }));
+    const result = await box(key, fetch).call("list_events", {});
+    expect(result.isError).toBeUndefined();
+    expect(textOf(result)).not.toContain(buyerKey);
+    const lic = JSON.parse(result.content[0]!.text).data[0].data.object;
+    expect(lic).toMatchObject({ id: "lic_1", object: "license_key", status: "active", product: "prod_1", customer: "cus_1" });
+    expect(lic.key).toMatch(/dashboard/);
+  });
+
+  it("hides it wherever it sits, and leaves other objects' fields alone", async () => {
+    const nested = { id: "evt_2", object: "event", data: { object: { object: "invoice", key: "not-a-license", licenses: [{ object: "license_key", key: buyerKey }] } } };
+    const { fetch } = fakeFetch(() => Response.json({ object: "list", data: [nested], has_more: false }));
+    const result = await box(TEST_KEY, fetch).call("list_events", {});
+    expect(textOf(result)).not.toContain(buyerKey);
+    expect(textOf(result)).toContain("not-a-license");
   });
 });

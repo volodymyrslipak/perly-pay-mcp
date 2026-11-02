@@ -2,7 +2,8 @@
  * What the server is started with, from its environment:
  *
  *   PERLY_PAY_SECRET_KEY      sk_test_… or sk_live_… (Dashboard → Developers)
- *   PERLY_PAY_API         default https://pay.perly.io (http only for this machine)
+ *   PERLY_PAY_API         default https://pay.perly.io (a perly.io host or this machine; http only for this machine)
+ *   PERLY_PAY_ALLOW_ANY_API  1 to send the key to any other https host (a self-run copy)
  *   PERLY_PAY_WEBHOOK_SECRET  optional whsec_…, the default for verify_webhook_signature
  *
  * A missing or wrong key does not stop the server: every API tool answers
@@ -43,8 +44,13 @@ export function checkKey(raw: string | undefined): { key: string | null; mode: M
   return { key, mode: match[1] as Mode, problem: null };
 }
 
-/** The site's origin from PERLY_PAY_API, with or without `/api/v1`. Plain http only to this machine: a key never crosses a network unencrypted. */
-export function checkUrl(raw: string | undefined): { siteUrl: string; problem: string | null } {
+/**
+ * The site's origin from PERLY_PAY_API, with or without `/api/v1`. Plain http
+ * only to this machine: a key never crosses a network unencrypted. Other than
+ * this machine, only a perly.io host unless `allowAny`: a config someone else
+ * wrote must not be able to carry the secret key away (AUTHZ-12).
+ */
+export function checkUrl(raw: string | undefined, allowAny = false): { siteUrl: string; problem: string | null } {
   const text = raw?.trim() || DEFAULT_SITE_URL;
   let url: URL;
   try {
@@ -56,13 +62,19 @@ export function checkUrl(raw: string | undefined): { siteUrl: string; problem: s
   if (url.protocol !== "https:" && !(url.protocol === "http:" && local)) {
     return { siteUrl: DEFAULT_SITE_URL, problem: "PERLY_PAY_API must be https (plain http only for localhost)." };
   }
+  if (!allowAny && !local && url.hostname !== "perly.io" && !url.hostname.endsWith(".perly.io")) {
+    return { siteUrl: DEFAULT_SITE_URL, problem: `PERLY_PAY_API points at ${url.hostname}, and your secret key would go there. Only perly.io and this machine are allowed; set PERLY_PAY_ALLOW_ANY_API=1 to send it to another host you run.` };
+  }
+  if (url.username || url.password) {
+    return { siteUrl: DEFAULT_SITE_URL, problem: "PERLY_PAY_API must not hold a user name or password." };
+  }
   const path = url.pathname.replace(/\/+$/, "").replace(/\/api\/v1$/, "");
   return { siteUrl: `${url.origin}${path}`, problem: null };
 }
 
 export function readConfig(env: Record<string, string | undefined>): Config {
   const key = checkKey(env.PERLY_PAY_SECRET_KEY);
-  const url = checkUrl(env.PERLY_PAY_API);
+  const url = checkUrl(env.PERLY_PAY_API, env.PERLY_PAY_ALLOW_ANY_API === "1");
   const webhookSecret = env.PERLY_PAY_WEBHOOK_SECRET?.trim() || null;
   return {
     secretKey: key.key,

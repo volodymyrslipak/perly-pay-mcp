@@ -18,7 +18,26 @@ describe("the server's config", () => {
     expect(checkUrl("not a url").problem).toContain("not a URL");
   });
 
+  it("sends the key only to perly.io or this machine (AUTHZ-12)", () => {
+    expect(checkUrl("https://pay.perly.io").problem).toBeNull();
+    expect(checkUrl("https://pay-dev.perly.io/api/v1").siteUrl).toBe("https://pay-dev.perly.io");
+    expect(checkUrl("https://localhost:3200").problem).toBeNull();
+    for (const elsewhere of ["https://evil.example", "https://pay.perly.io.evil.example", "https://evilperly.io", "https://pay.perly.io@evil.example"]) {
+      const { siteUrl, problem } = checkUrl(elsewhere);
+      expect(problem).toContain("PERLY_PAY_ALLOW_ANY_API");
+      expect(siteUrl).toBe("https://pay.perly.io");
+    }
+  });
+
+  it("takes another host only when told to, and never a user name in the address", () => {
+    expect(checkUrl("https://staging.pay.example.com", true).problem).toBeNull();
+    expect(checkUrl("https://me:secret@pay.perly.io", true).problem).toContain("user name");
+    expect(checkUrl("https://me@pay.perly.io").problem).toContain("user name");
+    expect(checkUrl("http://pay.example.com", true).problem).toContain("https");
+  });
+
   it("puts the API under the site", () => {
-    expect(readConfig({ PERLY_PAY_API: "https://staging.pay.example.com" }).apiUrl).toBe("https://staging.pay.example.com/api/v1");
+    expect(readConfig({ PERLY_PAY_API: "https://staging.pay.example.com", PERLY_PAY_ALLOW_ANY_API: "1" }).apiUrl).toBe("https://staging.pay.example.com/api/v1");
+    expect(readConfig({ PERLY_PAY_API: "https://staging.pay.example.com" }).urlProblem).toContain("PERLY_PAY_ALLOW_ANY_API");
   });
 });

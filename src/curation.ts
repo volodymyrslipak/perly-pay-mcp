@@ -6,10 +6,11 @@
  * never an accident.
  *
  * The line it draws: an assistant may build and test a shop end to end, and
- * read a live one. With a live key it may not move or redirect money, send
- * live events somewhere new, spend a buyer's credits or delete anything —
- * those are for the merchant, in the dashboard (`pay_links`), or for their
- * app's own code. Wallets, API keys, plans and live mode have no endpoint at
+ * read a live one. With a live key it may not move or redirect money, change
+ * what is on sale or where its buyers land, send live events somewhere new,
+ * spend a buyer's credits or delete anything — text from a buyer can reach the
+ * assistant, so those are for the merchant, in the dashboard (`pay_links`), or
+ * for their app's own code. Wallets, API keys, plans and live mode have no endpoint at
  * all; an assistant can only point at the page.
  */
 
@@ -31,6 +32,9 @@ export interface Excluded {
 export type Decision = Exposed | Excluded;
 
 const allow: Exposed = { expose: true, live: "allow" };
+
+/** A live key adds to the catalog; it does not change what buyers already see (AUTHZ-06). */
+const testOnlyEdit: Exposed = { expose: true, live: "refuse", liveWhy: "Changing what is on sale, or where its buyers land, is for the dashboard when real buyers are looking. Try it with a test key." };
 
 /**
  * Some clients read only so many tools (Cursor stops at 40, across every
@@ -59,12 +63,12 @@ export const CURATION: Readonly<Record<string, Decision>> = {
   createProduct: allow,
   listProducts: allow,
   retrieveProduct: covered("list_products"),
-  updateProduct: allow,
+  updateProduct: testOnlyEdit,
 
   createPrice: allow,
   listPrices: allow,
   retrievePrice: covered("list_prices"),
-  updatePrice: allow,
+  updatePrice: testOnlyEdit,
 
   createCustomer: allow,
   listCustomers: allow,
@@ -83,7 +87,7 @@ export const CURATION: Readonly<Record<string, Decision>> = {
   createPaymentLink: allow,
   listPaymentLinks: allow,
   retrievePaymentLink: covered("list_payment_links"),
-  updatePaymentLink: allow,
+  updatePaymentLink: testOnlyEdit,
 
   createCoupon: { expose: false, why: "Not in the first set: discounts are made in the dashboard." },
   listCoupons: { expose: false, why: "Not in the first set: discounts are made in the dashboard." },
